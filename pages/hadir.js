@@ -29,6 +29,18 @@ export default function DaftarHadir() {
     setTamu(tms || [])
   }
 
+  const handleDelete = async (id, type) => {
+    const table = type === 'mahasiswa' ? 'mahasiswa' : 'tamu'
+    const { error } = await supabase.from(table).delete().eq('id', id)
+    if (error) {
+      alert('❌ Gagal menghapus data')
+      console.error(error)
+    } else {
+      alert('✅ Data berhasil dihapus')
+      fetchData()
+    }
+  }
+
   const exportToExcel = (data, fileName) => {
     const worksheet = XLSX.utils.json_to_sheet(data)
     const workbook = XLSX.utils.book_new()
@@ -57,6 +69,7 @@ export default function DaftarHadir() {
                 <th>Nama</th>
                 <th>NIM</th>
                 <th>Prodi</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -66,6 +79,14 @@ export default function DaftarHadir() {
                   <td>{mhs.nama}</td>
                   <td>{mhs.nim}</td>
                   <td>{mhs.prodi}</td>
+                  <td>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDelete(mhs.id, 'mahasiswa')}
+                    >
+                      🗑️ Hapus
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -88,6 +109,7 @@ export default function DaftarHadir() {
                 <th>Nama</th>
                 <th>Tipe</th>
                 <th>Instansi</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -97,6 +119,14 @@ export default function DaftarHadir() {
                   <td>{tm.nama}</td>
                   <td>{tm.tipe}</td>
                   <td>{tm.instansi}</td>
+                  <td>
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDelete(tm.id, 'tamu')}
+                    >
+                      🗑️ Hapus
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -162,6 +192,19 @@ export default function DaftarHadir() {
 
         .export-btn:hover {
           background: #005bb5;
+        }
+
+        .delete-btn {
+          background: #dc3545;
+          color: white;
+          padding: 6px 12px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+
+        .delete-btn:hover {
+          background: #c82333;
         }
       `}</style>
     </div>
