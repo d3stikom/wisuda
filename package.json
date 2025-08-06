@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
+    "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
     "html5-qrcode": "^2.3.8",
     "next": "15.4.5",
