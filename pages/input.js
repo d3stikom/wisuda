@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import BackButton from '../components/BackButton'
 import * as XLSX from 'xlsx'
+import { QRCodeCanvas } from 'qrcode.react'
 
 export default function InputPage() {
   const [tab, setTab] = useState('mahasiswa')
@@ -164,7 +165,6 @@ export default function InputPage() {
         <button className={tab === 'tamu' ? 'active' : ''} onClick={() => { setTab('tamu'); setEditingId(null) }}>Tamu</button>
       </div>
 
-      {/* Tombol Import */}
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <label className="import-label">
           📂 Import Data Mahasiswa
@@ -219,6 +219,7 @@ export default function InputPage() {
             <th>Nama</th>
             <th>NIM</th>
             <th>Prodi</th>
+            <th>QR Code</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -228,6 +229,7 @@ export default function InputPage() {
               <td>{mhs.nama}</td>
               <td>{mhs.nim}</td>
               <td>{mhs.prodi}</td>
+              <td><QRCodeCanvas value={`${mhs.nim}`} size={75} /></td>
               <td>
                 <button onClick={() => handleEdit(mhs)}>Edit</button>
                 <button onClick={() => handleDelete(mhs.id, 'mahasiswa')}>Hapus</button>
@@ -244,6 +246,7 @@ export default function InputPage() {
             <th>Nama</th>
             <th>Tipe</th>
             <th>Instansi</th>
+            <th>QR Code</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -253,6 +256,7 @@ export default function InputPage() {
               <td>{tamu.nama}</td>
               <td>{tamu.tipe}</td>
               <td>{tamu.instansi}</td>
+              <td><QRCodeCanvas value={`${tamu.nama}`} size={75} /></td>
               <td>
                 <button onClick={() => handleEdit(tamu)}>Edit</button>
                 <button onClick={() => handleDelete(tamu.id, 'tamu')}>Hapus</button>
@@ -261,6 +265,7 @@ export default function InputPage() {
           ))}
         </tbody>
       </table>
+
 
       <style jsx>{`
         .input-container {
