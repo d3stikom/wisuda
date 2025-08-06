@@ -3,35 +3,31 @@ import { supabase } from '../lib/supabaseClient'
 import BackButton from '../components/BackButton'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
+import dayjs from 'dayjs'
+
 
 export default function DaftarHadir() {
-  const [mahasiswa, setMahasiswa] = useState([])
-  const [tamu, setTamu] = useState([])
+  const [scanLog, setScanLog] = useState([])
 
   useEffect(() => {
     fetchData()
   }, [])
 
   const fetchData = async () => {
-    const { data: mhs } = await supabase
-      .from('mahasiswa')
+    const { data, error } = await supabase
+      .from('scan_log')
       .select('*')
-      .eq('hadir', true)
-      .order('nama', { ascending: true })
+      .order('waktu_scan', { ascending: false })
 
-    const { data: tms } = await supabase
-      .from('tamu')
-      .select('*')
-      .eq('hadir', true)
-      .order('nama', { ascending: true })
-
-    setMahasiswa(mhs || [])
-    setTamu(tms || [])
+    if (error) {
+      console.error('Gagal memuat data:', error)
+    } else {
+      setScanLog(data || [])
+    }
   }
 
-  const handleDelete = async (id, type) => {
-    const table = type === 'mahasiswa' ? 'mahasiswa' : 'tamu'
-    const { error } = await supabase.from(table).delete().eq('id', id)
+  const handleDelete = async (id) => {
+    const { error } = await supabase.from('scan_log').delete().eq('id', id)
     if (error) {
       alert('❌ Gagal menghapus data')
       console.error(error)
@@ -41,98 +37,55 @@ export default function DaftarHadir() {
     }
   }
 
-  const exportToExcel = (data, fileName) => {
-    const worksheet = XLSX.utils.json_to_sheet(data)
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(scanLog)
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Daftar')
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Daftar Scan')
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' })
-    saveAs(blob, `${fileName}.xlsx`)
+    saveAs(blob, `Daftar_Scan_Log.xlsx`)
   }
 
   return (
     <div className="container">
-      <h1>📋 Daftar Kehadiran</h1>
+      <h1>📋 Daftar Scan Kehadiran</h1>
 
-      <section>
-        <h2>🎓 Mahasiswa</h2>
-        <button className="export-btn" onClick={() => exportToExcel(mahasiswa, 'Daftar_Hadir_Mahasiswa')}>
-          📥 Export Mahasiswa
-        </button>
-        {mahasiswa.length === 0 ? (
-          <p>Belum ada mahasiswa yang hadir.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>No</th>
-                <th>Nama</th>
-                <th>NIM</th>
-                <th>Prodi</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mahasiswa.map((mhs, index) => (
-                <tr key={mhs.id}>
-                  <td>{index + 1}</td>
-                  <td>{mhs.nama}</td>
-                  <td>{mhs.nim}</td>
-                  <td>{mhs.prodi}</td>
-                  <td>
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(mhs.id, 'mahasiswa')}
-                    >
-                      🗑️ Hapus
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <button className="export-btn" onClick={exportToExcel}>
+        📥 Export Scan Log
+      </button>
 
-      <section>
-        <h2>👤 Tamu</h2>
-        <button className="export-btn" onClick={() => exportToExcel(tamu, 'Daftar_Hadir_Tamu')}>
-          📥 Export Tamu
-        </button>
-        {tamu.length === 0 ? (
-          <p>Belum ada tamu yang hadir.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>No</th>
-                <th>Nama</th>
-                <th>Tipe</th>
-                <th>Instansi</th>
-                <th>Aksi</th>
+      {scanLog.length === 0 ? (
+        <p>Tidak ada data kehadiran yang tercatat.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama</th>
+              <th>Tipe</th>
+              <th>Keterangan</th>
+              <th>Waktu</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scanLog.map((item, index) => (
+              <tr key={item.id}>
+                <td>{index + 1}</td>
+                <td>{item.nama}</td>
+                <td>{item.jenis}</td>
+                 <td>{item.status? 'Hadir':'Tidak Hadir'}</td>
+               <td>{item.waktu_scan ? dayjs(item.waktu).format('YYYY-MM-DD HH:mm:ss'):'?'}</td>
+                <td>
+                  <button className="delete-btn" onClick={() => handleDelete(item.id)}>
+                    🗑️ Hapus
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {tamu.map((tm, index) => (
-                <tr key={tm.id}>
-                  <td>{index + 1}</td>
-                  <td>{tm.nama}</td>
-                  <td>{tm.tipe}</td>
-                  <td>{tm.instansi}</td>
-                  <td>
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(tm.id, 'tamu')}
-                    >
-                      🗑️ Hapus
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <BackButton />
 
@@ -150,10 +103,6 @@ export default function DaftarHadir() {
         h1 {
           text-align: center;
           margin-bottom: 32px;
-        }
-
-        section {
-          margin-bottom: 40px;
         }
 
         table {

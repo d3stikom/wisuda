@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '../lib/supabaseClient'
 import BackButton from '../components/BackButton'
-
 
 export default function ScanPage() {
   const [input, setInput] = useState('')
@@ -31,8 +30,13 @@ export default function ScanPage() {
 
       if (cekLog.length > 0) {
         setStatus('⚠️ Mahasiswa ini sudah melakukan scan sebelumnya.')
+        setTimeout(() => {
+          // Me-reload halaman untuk mereset state dan memulai ulang scanner
+          window.location.reload()
+        }, 1000) // Jeda 1 detik
         return
       }
+      
 
       await supabase.from('mahasiswa').update({ hadir: true }).eq('id', mhs.id)
       await supabase.from('scan_log').insert({
@@ -48,7 +52,11 @@ export default function ScanPage() {
         prodi: mhs.prodi,
         hadir: true,
       })
-      setStatus(`✅ Mahasiswa "${mhs.nama}" dicatat hadir.`)
+      setStatus(`✅ Mahasiswa "${mhs.nama}" dicatat hadir. Halaman akan dimuat ulang...`)
+      setTimeout(() => {
+        // Me-reload halaman untuk mereset state dan memulai ulang scanner
+        window.location.reload()
+      }, 1000) // Jeda 1 detik
       return
     }
 
@@ -84,11 +92,20 @@ export default function ScanPage() {
         instansi: tamu.instansi,
         hadir: true,
       })
-      setStatus(`✅ Tamu "${tamu.nama}" dicatat hadir.`)
+      setStatus(`✅ Tamu "${tamu.nama}" dicatat hadir. Halaman akan dimuat ulang...`)
+      setTimeout(() => {
+        // Me-reload halaman untuk mereset state dan memulai ulang scanner
+        window.location.reload()
+      }, 1000) // Jeda 1 detik
       return
     }
 
     setStatus('❌ Data tidak ditemukan.')
+    setTimeout(() => {
+        // Me-reload halaman untuk mereset state dan memulai ulang scanner
+        window.location.reload()
+      }, 1000) // Jeda 1 detik
+      return
   }
 
   useEffect(() => {
