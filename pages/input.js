@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import BackButton from '../components/BackButton'
 import * as XLSX from 'xlsx'
+import QRCode from 'qrcode'
 
 export default function InputPage() {
   const [tab, setTab] = useState('mahasiswa')
@@ -257,6 +258,13 @@ export default function InputPage() {
               <td>{mhs.nim}</td>
               <td>{mhs.prodi}</td>
               <td>
+                {qrCodes[`mhs-${mhs.id}`] ? (
+                  <img src={qrCodes[`mhs-${mhs.id}`]} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                ) : (
+                  'Loading...'
+                )}
+              </td>
+              <td>
                 <button onClick={() => handleEdit(mhs)}>Edit</button>
                 <button onClick={() => handleDelete(mhs.id, 'mahasiswa')}>Hapus</button>
               </td>
@@ -282,6 +290,13 @@ export default function InputPage() {
               <td>{tamu.nama}</td>
               <td>{tamu.tipe}</td>
               <td>{tamu.instansi}</td>
+              <td>
+                {qrCodes[`tamu-${tamu.id}`] ? (
+                  <img src={qrCodes[`tamu-${tamu.id}`]} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                ) : (
+                  'Loading...'
+                )}
+              </td>
               <td>
                 <button onClick={() => handleEdit(tamu)}>Edit</button>
                 <button onClick={() => handleDelete(tamu.id, 'tamu')}>Hapus</button>
