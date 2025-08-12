@@ -18,6 +18,15 @@ export default function InputPage() {
   const [dataMahasiswa, setDataMahasiswa] = useState([])
   const [dataTamu, setDataTamu] = useState([])
   const [qrCodes, setQrCodes] = useState({})
+  
+  // Pagination states
+  const [currentPageMahasiswa, setCurrentPageMahasiswa] = useState(1)
+  const [currentPageTamu, setCurrentPageTamu] = useState(1)
+  const itemsPerPage = 5
+  
+  // Search states
+  const [searchMahasiswa, setSearchMahasiswa] = useState('')
+  const [searchTamu, setSearchTamu] = useState('')
 
   const fetchData = async () => {
     const { data: mahasiswa } = await supabase
@@ -63,6 +72,80 @@ export default function InputPage() {
       }
     })
   }, [dataMahasiswa, dataTamu, qrCodes])
+
+  // Search and filter functions
+  const getFilteredData = (data, searchTerm, type) => {
+    if (!searchTerm) return data
+    
+    return data.filter(item => {
+      if (type === 'mahasiswa') {
+        return (
+          item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.nim.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.prodi.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      } else {
+        return (
+          item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.tipe.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.instansi.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      }
+    })
+  }
+
+  // Pagination functions
+  const getPaginatedData = (data, currentPage) => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return data.slice(startIndex, endIndex)
+  }
+
+  const getTotalPages = (data) => {
+    return Math.ceil(data.length / itemsPerPage)
+  }
+
+  const handlePageChange = (page, type) => {
+    if (type === 'mahasiswa') {
+      setCurrentPageMahasiswa(page)
+    } else {
+      setCurrentPageTamu(page)
+    }
+  }
+
+  const renderPagination = (totalPages, currentPage, type) => {
+    const pages = []
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i, type)}
+          className={`pagination-btn ${currentPage === i ? 'active' : ''}`}
+        >
+          {i}
+        </button>
+      )
+    }
+    return (
+      <div className="pagination">
+        <button
+          onClick={() => handlePageChange(Math.max(1, currentPage - 1), type)}
+          disabled={currentPage === 1}
+          className="pagination-btn"
+        >
+          ← Prev
+        </button>
+        {pages}
+        <button
+          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1), type)}
+          disabled={currentPage === totalPages}
+          className="pagination-btn"
+        >
+          Next →
+        </button>
+      </div>
+    )
+  }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -241,6 +324,28 @@ export default function InputPage() {
       </form>
 
       <h3 style={{ marginTop: '40px' }}>📄 Daftar Mahasiswa</h3>
+      
+      {/* Search input for mahasiswa */}
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder="🔍 Cari mahasiswa (nama, NIM, atau prodi)..."
+          value={searchMahasiswa}
+          onChange={(e) => {
+            setSearchMahasiswa(e.target.value)
+            setCurrentPageMahasiswa(1) // Reset to first page when searching
+          }}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '2px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '16px'
+          }}
+        />
+      </div>
+      
+      <p>Total: {getFilteredData(dataMahasiswa, searchMahasiswa, 'mahasiswa').length} mahasiswa</p>
       <table className="data-table">
         <thead>
           <tr>
@@ -252,7 +357,7 @@ export default function InputPage() {
           </tr>
         </thead>
         <tbody>
-          {dataMahasiswa.map((mhs) => (
+          {getPaginatedData(getFilteredData(dataMahasiswa, searchMahasiswa, 'mahasiswa'), currentPageMahasiswa).map((mhs) => (
             <tr key={mhs.id}>
               <td>{mhs.nama}</td>
               <td>{mhs.nim}</td>
@@ -272,8 +377,31 @@ export default function InputPage() {
           ))}
         </tbody>
       </table>
+      {getTotalPages(getFilteredData(dataMahasiswa, searchMahasiswa, 'mahasiswa')) > 1 && renderPagination(getTotalPages(getFilteredData(dataMahasiswa, searchMahasiswa, 'mahasiswa')), currentPageMahasiswa, 'mahasiswa')}
 
       <h3 style={{ marginTop: '40px' }}>📄 Daftar Tamu</h3>
+      
+      {/* Search input for tamu */}
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder="🔍 Cari tamu (nama, tipe, atau instansi)..."
+          value={searchTamu}
+          onChange={(e) => {
+            setSearchTamu(e.target.value)
+            setCurrentPageTamu(1) // Reset to first page when searching
+          }}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '2px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '16px'
+          }}
+        />
+      </div>
+      
+      <p>Total: {getFilteredData(dataTamu, searchTamu, 'tamu').length} tamu</p>
       <table className="data-table">
         <thead>
           <tr>
@@ -285,7 +413,7 @@ export default function InputPage() {
           </tr>
         </thead>
         <tbody>
-          {dataTamu.map((tamu) => (
+          {getPaginatedData(getFilteredData(dataTamu, searchTamu, 'tamu'), currentPageTamu).map((tamu) => (
             <tr key={tamu.id}>
               <td>{tamu.nama}</td>
               <td>{tamu.tipe}</td>
@@ -305,6 +433,7 @@ export default function InputPage() {
           ))}
         </tbody>
       </table>
+      {getTotalPages(getFilteredData(dataTamu, searchTamu, 'tamu')) > 1 && renderPagination(getTotalPages(getFilteredData(dataTamu, searchTamu, 'tamu')), currentPageTamu, 'tamu')}
 
 
       <style jsx>{`
@@ -424,6 +553,44 @@ export default function InputPage() {
           color: white;
           border-radius: 6px;
           cursor: pointer;
+        }
+
+        .pagination {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 20px 0;
+          gap: 5px;
+        }
+
+        .pagination-btn {
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          background-color: #f8f9fa;
+          color: #333;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+          background-color: #007bff;
+          color: white;
+          border-color: #007bff;
+        }
+
+        .pagination-btn.active {
+          background-color: #007bff;
+          color: white;
+          border-color: #007bff;
+        }
+
+        .pagination-btn:disabled {
+          background-color: #e9ecef;
+          color: #6c757d;
+          cursor: not-allowed;
+          border-color: #dee2e6;
         }
       `}</style>
     </div>
