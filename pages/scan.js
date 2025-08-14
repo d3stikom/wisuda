@@ -8,7 +8,14 @@ export default function ScanPage() {
   const [status, setStatus] = useState(null)
   const [resultData, setResultData] = useState(null)
   const [isClient, setIsClient] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const scannerRef = useRef(null)
+
+  const handleError = (error) => {
+    console.error('Scanner error:', error)
+    setHasError(true)
+    setStatus('❌ Terjadi kesalahan. Silakan refresh halaman atau gunakan input manual.')
+  }
 
   const handleCheck = async (value) => {
     setInput(value)
@@ -31,13 +38,11 @@ export default function ScanPage() {
       if (cekLog.length > 0) {
         setStatus('⚠️ Mahasiswa ini sudah melakukan scan sebelumnya.')
         setTimeout(() => {
-          // Me-reload halaman untuk mereset state dan memulai ulang scanner
           window.location.reload()
-        }, 1000) // Jeda 1 detik
+        }, 1000)
         return
       }
       
-
       await supabase.from('mahasiswa').update({ hadir: true }).eq('id', mhs.id)
       await supabase.from('scan_log').insert({
         jenis: 'mahasiswa',
@@ -54,9 +59,8 @@ export default function ScanPage() {
       })
       setStatus(`✅ Mahasiswa "${mhs.nama}" dicatat hadir. Halaman akan dimuat ulang...`)
       setTimeout(() => {
-        // Me-reload halaman untuk mereset state dan memulai ulang scanner
         window.location.reload()
-      }, 1000) // Jeda 1 detik
+      }, 1000)
       return
     }
 
@@ -75,6 +79,9 @@ export default function ScanPage() {
 
       if (cekLog.length > 0) {
         setStatus('⚠️ Tamu ini sudah melakukan scan sebelumnya.')
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
         return
       }
 
@@ -94,18 +101,15 @@ export default function ScanPage() {
       })
       setStatus(`✅ Tamu "${tamu.nama}" dicatat hadir. Halaman akan dimuat ulang...`)
       setTimeout(() => {
-        // Me-reload halaman untuk mereset state dan memulai ulang scanner
         window.location.reload()
-      }, 1000) // Jeda 1 detik
+      }, 1000)
       return
     }
 
     setStatus('❌ Data tidak ditemukan.')
     setTimeout(() => {
-        // Me-reload halaman untuk mereset state dan memulai ulang scanner
-        window.location.reload()
-      }, 1000) // Jeda 1 detik
-      return
+      window.location.reload()
+    }, 1000)
   }
 
   useEffect(() => {
@@ -115,80 +119,126 @@ export default function ScanPage() {
   useEffect(() => {
     if (!isClient) return
 
-    const scanner = new Html5Qrcode('reader')
-    scannerRef.current = scanner
+    let scanner = null
+    let isScanning = false
 
-    Html5Qrcode.getCameras().then((devices) => {
-      if (devices && devices.length) {
+    const initializeScanner = async () => {
+      try {
+        scanner = new Html5Qrcode('reader')
+        scannerRef.current = scanner
+
+        const devices = await Html5Qrcode.getCameras()
+        
+        if (!devices || devices.length === 0) {
+          setStatus('❌ Tidak ada kamera yang tersedia. Gunakan input manual.')
+          return
+        }
+
         const cameraId = devices[0].id
-        scanner.start(
+        
+        await scanner.start(
           cameraId,
           { fps: 10, qrbox: 250 },
           (decodedText) => {
-            if (decodedText !== input) {
+            if (decodedText !== input && isScanning) {
+              isScanning = false
               scanner.stop().then(() => {
+                handleCheck(decodedText)
+              }).catch((err) => {
+                console.warn('Error stopping scanner:', err)
                 handleCheck(decodedText)
               })
             }
           },
-          () => {}
+          (errorMessage) => {
+            // Handle scan errors silently
+          }
         )
+        
+        isScanning = true
+        setStatus('📷 Scanner aktif. Arahkan kamera ke QR Code.')
+        
+      } catch (error) {
+        console.error('Error initializing scanner:', error)
+        handleError(error)
       }
-    })
+    }
+
+    initializeScanner()
 
     return () => {
-      scannerRef.current?.stop().then(() => {
-        scannerRef.current.clear()
-      })
+      if (scanner && isScanning) {
+        scanner.stop().then(() => {
+          if (scanner.clear) {
+            scanner.clear()
+          }
+        }).catch((err) => {
+          console.warn('Error during cleanup:', err)
+        })
+      }
     }
-  }, [isClient, input])
+  }, [isClient])
 
   return (
     <div className="scan-wrapper">
       <div className="left-box">
         <img src="/images/logo.png" alt="Logo" className="logo" />
-              <h1>Selamat Datang di Wisuda</h1>
-              <h4>D3 Manajemen Informatika Ke-29 dan S1 Teknik Informatika Ke-15</h4>
-              <h4>STIKOM PGRI Banyuwangi</h4>   
-              <h4>Tahun 2025</h4>
-              <p>Silakan lakukan scan QR Code untuk mencatat kehadiran Anda.Pastikan kamera Anda mengarah ke QR Code yang sesuai.Jika tidak ada kamera, silakan masukkan NIM/Nama secara manual</p>
+        <h1>Selamat Datang di Wisuda</h1>
+        <h4>D3 Manajemen Informatika Ke-29 dan S1 Teknik Informatika Ke-15</h4>
+        <h4>STIKOM PGRI Banyuwangi</h4>   
+        <h4>Tahun 2025</h4>
+        <p>Silakan lakukan scan QR Code untuk mencatat kehadiran Anda. Pastikan kamera Anda mengarah ke QR Code yang sesuai. Jika tidak ada kamera, silakan masukkan NIM/Nama secara manual</p>
         <BackButton />
       </div>
 
       <div className="right-box">
         <h2>📷 Scan Kehadiran</h2>
 
+        {hasError && (
+          <div style={{ padding: '20px', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', margin: '10px 0' }}>
+            <p><strong>⚠️ Error:</strong> Terjadi masalah dengan scanner. Silakan:</p>
+            <ul>
+              <li>Refresh halaman</li>
+              <li>Pastikan browser memiliki akses ke kamera</li>
+              <li>Gunakan input manual sebagai alternatif</li>
+            </ul>
+            <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}>
+              🔄 Refresh Halaman
+            </button>
+          </div>
+        )}
+
         {isClient && (
           <div id="reader" className="scanner-box" />
-              ) }
-              <h3>🔍 Input Manual</h3>
-<div style={{ marginBottom: '10px' }}>
-  <label htmlFor="manualMahasiswa"><strong>Masukkan NIM Mahasiswa:</strong></label><br />
-  <input
-    type="text"
-    id="manualMahasiswa"
-    placeholder="Contoh: 1234567890"
-    value={input}
-    onChange={(e) => setInput(e.target.value)}
-    style={{ padding: '8px', width: '100%', marginTop: '5px', marginBottom: '10px' }}
-  />
-  <button
-    onClick={() => handleCheck(input)}
-    style={{
-      padding: '10px 16px',
-      fontSize: '16px',
-      background: '#0070f3',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      width: '100%',
-    }}
-  >
-    🔄 Cek Manual (Mahasiswa/Nama Tamu)
-  </button>
-</div>
-
+        )}
+        
+        <h3>🔍 Input Manual</h3>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="manualMahasiswa"><strong>Masukkan NIM Mahasiswa:</strong></label><br />
+          <input
+            type="text"
+            id="manualMahasiswa"
+            placeholder="Contoh: 1234567890"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            style={{ padding: '8px', width: '100%', marginTop: '5px', marginBottom: '10px' }}
+          />
+          <button
+            onClick={() => handleCheck(input)}
+            style={{
+              padding: '10px 16px',
+              fontSize: '16px',
+              background: '#0070f3',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              width: '100%',
+            }}
+          >
+            🔄 Cek Manual (Mahasiswa/Nama Tamu)
+          </button>
+        </div>
 
         {input && <p><strong>📄 Data Terbaca:</strong> {input}</p>}
         {status && <p><strong>🟢 Status:</strong> {status}</p>}
