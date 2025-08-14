@@ -53,6 +53,15 @@ export default function InputPage() {
     }
   }
 
+  const downloadQRCode = (qrCodeDataURL, filename) => {
+    const link = document.createElement('a')
+    link.href = qrCodeDataURL
+    link.download = `${filename}.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   useEffect(() => {
     fetchData()
   }, [])
@@ -364,7 +373,23 @@ export default function InputPage() {
               <td>{mhs.prodi}</td>
               <td>
                 {qrCodes[`mhs-${mhs.id}`] ? (
-                  <img src={qrCodes[`mhs-${mhs.id}`]} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <img src={qrCodes[`mhs-${mhs.id}`]} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                    <button 
+                      onClick={() => downloadQRCode(qrCodes[`mhs-${mhs.id}`], `QR_${mhs.nama}_${mhs.nim}`)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📥 Download
+                    </button>
+                  </div>
                 ) : (
                   'Loading...'
                 )}
@@ -420,7 +445,23 @@ export default function InputPage() {
               <td>{tamu.instansi}</td>
               <td>
                 {qrCodes[`tamu-${tamu.id}`] ? (
-                  <img src={qrCodes[`tamu-${tamu.id}`]} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <img src={qrCodes[`tamu-${tamu.id}`]} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                    <button 
+                      onClick={() => downloadQRCode(qrCodes[`tamu-${tamu.id}`], `QR_${tamu.nama}_${tamu.tipe}`)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📥 Download
+                    </button>
+                  </div>
                 ) : (
                   'Loading...'
                 )}
