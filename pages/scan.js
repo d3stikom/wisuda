@@ -184,7 +184,7 @@ export default function ScanPage() {
       <div className="left-box">
         <img src="/images/logo.png" alt="Logo" className="logo" />
         <h1>Selamat Datang di Wisuda</h1>
-        <h4>D3 Manajemen Informatika Ke-29 dan S1 Teknik Informatika Ke-15</h4>
+        <h4>D3 Manajemen Informatika Ke-26 dan S1 Teknik Informatika Ke-17</h4>
         <h4>STIKOM PGRI Banyuwangi</h4>   
         <h4>Tahun 2025</h4>
         <p>Silakan lakukan scan QR Code untuk mencatat kehadiran Anda. Pastikan kamera Anda mengarah ke QR Code yang sesuai. Jika tidak ada kamera, silakan masukkan NIM/Nama secara manual</p>
@@ -328,3 +328,4 @@ export default function ScanPage() {
     </div>
   )
 }
+
